@@ -3,18 +3,19 @@ import functools
 import requests
 import requests_oauthlib
 
+
 class OpenphotoHttpClient(object):
 
-    def __init__(self, config):
-        self.config = config
+    def __init__(self, host, consumer_key, consumer_secret,
+                       oauth_token, oauth_secret, scheme="https"):
         self.auth = requests_oauthlib.OAuth1(
-            config.api.consumer_key,
-            config.api.consumer_secret,
-            config.api.oauth_token,
-            config.api.oauth_secret)
+                            consumer_key,
+                            consumer_secret,
+                            oauth_token,
+                            oauth_secret)
         self.session = requests.Session()
-        self.host = self.config.api.host
-        self.scheme = "https"
+        self.host = host
+        self.scheme = scheme
 
     def url(self, endpoint):
         return "{0}://{1}{2}".format(self.scheme, self.host, endpoint)
@@ -44,7 +45,6 @@ class OpenPhotoObject(object):
         result = True
         while result:
             data = dict(pageSize=cls.page_size, page=page)
-            print "Calling page %s" % (page)
             result = partial(params=data).json()['result']
             for data in result:
                 yield cls(client, data)
