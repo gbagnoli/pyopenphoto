@@ -18,6 +18,8 @@ class OpenphotoHttpClient(object):
         self.scheme = scheme
 
     def url(self, endpoint):
+        if not endpoint.startswith("/"):
+            endpoint = "/" + endpoint
         return "{0}://{1}{2}".format(self.scheme, self.host, endpoint)
 
     def __getattr__(self, attr):
@@ -27,6 +29,8 @@ class OpenphotoHttpClient(object):
         raise AttributeError(attr)
 
     def request(self, method, endpoint, **kwargs):
+        if "auth" in kwargs:
+            raise ValueError("request() called with auth")
         kwargs['auth'] = self.auth
         response = self.session.request(method, self.url(endpoint), **kwargs)
         response.raise_for_status()
