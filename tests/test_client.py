@@ -1,11 +1,14 @@
 try:
     import unittest2 as unittest
-    import mock
     unittest  # silence pyflakes
-    mock  # silence pyflakes
 
 except ImportError:
     import unittest
+
+try:
+    import mock
+    mock  # silence pyflakes
+except ImportError:
     import unittest.mock as mock
 
 
