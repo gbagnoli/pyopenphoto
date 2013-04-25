@@ -81,8 +81,11 @@ class OpenPhotoObject(object):
         self.data[attr] = value
 
     @classmethod
-    def create(cls, client, **kwargs):
-        response = client.post(cls.create_path, **kwargs)
+    def create(cls, client, requests_args=None, **kwargs):
+        requests_args = requests_args or {}
+        data = requests_args.pop("data", {})
+        kwargs.update(data)
+        response = client.post(cls.create_path, data=kwargs, **requests_args)
         return cls(client, response.json())
 
     @classmethod
@@ -90,13 +93,21 @@ class OpenPhotoObject(object):
         return cls.search(client)
 
     @classmethod
+    def get(cls, client, id, endpoint="view.json"):
+        response = client.get("{0}/{1}/{2}".format(cls.object_path, id, endpoint))
+        data = response.json()['result']
+        return cls(client, data)
+
+    @classmethod
     def search(cls, client, **kwargs):
         url = "{0}/list.json".format(cls.collection_path)
         partial = functools.partial(client.request, "get", url, **kwargs)
         return cls.iterate(client, partial)
 
-    def url(self, operation):
-        return "{0}/{1}/{2}.json".format(self.object_path, self.id, operation)
+    def url(self, operation, extension=".json"):
+        extension = extension or ""
+        return "{0}/{1}/{2}{3}".format(self.object_path, self.id, operation,
+                                       extension)
 
     def delete(self):
         return self.client.post(self.url("delete")).json()
@@ -116,3 +127,8 @@ class Photo(OpenPhotoObject):
     @classmethod
     def create(cls, client, **kwargs):
         raise NotImplementedError
+
+    def download(self, chunk_size=4096):
+        url = self.url("download", None)
+        response = self.client.get(self.url("download", extension=None), stream=True)
+        return response.iter_content(chunk_size=chunk_size)

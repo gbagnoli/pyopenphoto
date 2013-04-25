@@ -161,6 +161,17 @@ class TestOpenPhotoObject(unittest.TestCase):
         finally:
             OpenPhotoObject.collection_path = ocp
 
+    def test_get(self):
+        response_mock = mock.MagicMock()
+        self.client.get.return_value = response_mock
+        expected = dict(res1=1, res2=2)
+        response_mock.json.return_value = dict(result=expected)
+        obj = OpenPhotoObject.get(self.client, "id", "test.json")
+        url = "{0}/id/test.json".format(OpenPhotoObject.object_path)
+        self.assertTrue(self.client.get.called_with(url))
+        self.assertDictEqual(obj.data, expected)
+        self.assertIs(self.client, obj.client)
+
     def test_iterate(self):
         partial = mock.MagicMock()
         expected = dict(res1=1, res2=2)
