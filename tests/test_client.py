@@ -161,3 +161,23 @@ class TestOpenPhotoObject(unittest.TestCase):
         finally:
             OpenPhotoObject.collection_path = ocp
 
+    def test_iterate(self):
+        partial = mock.MagicMock()
+        expected = dict(res1=1, res2=2)
+        resmock = mock.MagicMock()
+        partial.return_value = resmock
+        resmock.json.return_value = dict(result=[expected])
+
+        iter_ = OpenPhotoObject.iterate(self.client, partial)
+        next_ = iter_.next if hasattr(iter_, "next") else iter_.__next__
+        self.assertTrue(partial.called_with(params=dict(pageSize=OpenPhotoObject.page_size,
+                                                        page=1)))
+        obj = next_()
+        self.assertDictEqual(obj.data, expected)
+        self.assertIs(obj.client, self.client)
+        resmock.json.return_value = dict(result=[])
+        with self.assertRaises(StopIteration):
+            next_()
+        self.assertTrue(partial.called_with(params=dict(pageSize=OpenPhotoObject.page_size,
+                                                        page=2)))
+
