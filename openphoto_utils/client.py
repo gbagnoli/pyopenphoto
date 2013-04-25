@@ -91,7 +91,7 @@ class OpenPhotoObject(object):
 
     @classmethod
     def search(cls, client, **kwargs):
-        url = "{}/list.json".format(cls.collection_path)
+        url = "{0}/list.json".format(cls.collection_path)
         partial = functools.partial(client.request, "get", url, **kwargs)
         return cls.iterate(client, partial)
 
