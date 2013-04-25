@@ -12,7 +12,8 @@ except ImportError:
     import unittest.mock as mock
 
 
-from openphoto_utils.client import OpenphotoHttpClient
+from openphoto_utils.client import (OpenphotoHttpClient,
+                                    OpenPhotoObject)
 
 
 class TestClient(unittest.TestCase):
@@ -63,4 +64,100 @@ class TestClient(unittest.TestCase):
             )
             with self.assertRaises(AttributeError):
                 self.client.not_existing
+
+
+class TestOpenPhotoObject(unittest.TestCase):
+
+    def setUp(self):
+        self.client = mock.MagicMock()
+
+    def test_getattr(self):
+        data = dict(attr1=1, attr2=2)
+        obj = OpenPhotoObject(self.client, data)
+        self.assertIs(self.client, obj.client)
+        self.assertDictEqual(obj.data, data)
+        with self.assertRaises(AttributeError):
+            obj.no_existing
+        for attr in data:
+            self.assertEqual(getattr(obj, attr), data[attr])
+
+    def test_setattr(self):
+        data = {}
+        obj = OpenPhotoObject(self.client, data)
+        obj.new_attr = 1
+
+        self.assertNotIn("new_attr", obj.data)
+        self.assertIn("newAttr", obj.data)
+        self.assertEqual(obj.new_attr, 1)
+        self.assertEqual(obj.newAttr, 1)
+
+    def test_create(self):
+        ocp = OpenPhotoObject.create_path
+        try:
+            OpenPhotoObject.create_path = "/create_path"
+            resp = self.client.post.return_value
+            obj = OpenPhotoObject.create(self.client, attr1=1, attr2=2)
+            self.assertIs(obj.data, resp.json.return_value)
+            self.assertTrue(self.client.post.called_with('/create_path', attr1=1, attr2=2))
+        finally:
+            OpenPhotoObject.create_path = ocp
+
+    def test_url(self):
+        oop = OpenPhotoObject.object_path
+        try:
+            OpenPhotoObject.object_path = "/object"
+            obj = OpenPhotoObject(self.client, dict(id=1))
+            self.assertEqual(obj.url("test"), "/object/1/test.json")
+        finally:
+            OpenPhotoObject.create_path = oop
+
+    @mock.patch.object(OpenPhotoObject, "url")
+    def test_delete(self, url_mock):
+        obj = OpenPhotoObject(self.client, {})
+        res = obj.delete()
+        self.assertTrue(self.client.post.return_value.json.called)
+        self.assertIs(res, self.client.post.return_value.json.return_value)
+        self.assertTrue(url_mock.called_with("delete"))
+        self.assertTrue(self.client.post.called_with(url_mock.return_value))
+
+    @mock.patch.object(OpenPhotoObject, "url")
+    def test_update(self, url_mock):
+        params = dict(param1=1, param2=2)
+        obj = OpenPhotoObject(self.client, params)
+        res = obj.update()
+        self.assertTrue(self.client.post.return_value.json.called)
+        self.assertIs(res, self.client.post.return_value.json.return_value)
+        self.assertTrue(url_mock.called_with("update"))
+        self.assertTrue(self.client.post.called_with(url_mock.return_value,
+                        data=params))
+        obj.data["param3"] = 3
+        del obj.data["param2"]
+        self.assertTrue(self.client.post.called_with(url_mock.return_value,
+                                                     data=dict(param1=1, param3=3)))
+
+    def test_repr(self):
+        obj = OpenPhotoObject(self.client, {"id":1})
+        self.assertEqual(repr(obj), "<OpenPhotoObject 1>")
+
+    @mock.patch.object(OpenPhotoObject, "search")
+    def test_all(self, search_mock):
+        self.assertIs(OpenPhotoObject.all(self.client), search_mock.return_value)
+        self.assertTrue(search_mock.called_with(self.client))
+
+    @mock.patch.object(OpenPhotoObject, "iterate")
+    @mock.patch("functools.partial")
+    def test_search(self, partial_mock, iterate_mock):
+        ocp = OpenPhotoObject.collection_path
+        try:
+            OpenPhotoObject.collection_path = "/collection"
+            params = dict(param1=1, param2=2)
+            res = OpenPhotoObject.search(self.client, **params)
+            self.assertIs(res, iterate_mock.return_value)
+            self.assertTrue(iterate_mock.called_with(self.client,
+                                                     partial_mock.return_value))
+            self.assertTrue(partial_mock.called_with(self.client.request, "get",
+                                                     "/collection/list.json",
+                                                     **params))
+        finally:
+            OpenPhotoObject.collection_path = ocp
 
