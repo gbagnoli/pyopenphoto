@@ -12,7 +12,7 @@ except ImportError:
     import unittest.mock as mock
 
 
-from openphoto_utils.client import (OpenphotoHttpClient,
+from openphoto.client import (OpenphotoHttpClient,
                                     OpenPhotoObject)
 
 

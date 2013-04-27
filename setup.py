@@ -10,26 +10,22 @@ except ImportError:
 try:
     from setuptools import setup
     kw = {
-        "entry_points": """
-[console_scripts]
-    openphoto-downloader = openphoto_utils.downloader:main
-""",
         "zip_safe": False,
         "install_requires": requires
     }
+    setup  # silence pyflakes
 except ImportError:
     from distutils.core import setup
     kw = {
-        "scripts": ['scripts/openphoto-downloader'],
         "requires": "requires"
     }
 
-setup(name="openphoto-utils",
+setup(name="pyopenphoto",
       version="0.1",
-      description="Utils for openphoto",
+      description="OpenPhoto API client",
       author="Giacomo Bagnoli",
       author_email="gbagnoli@gmail.com",
-      packages=["openphoto_utils"],
+      packages=["openphoto"],
       **kw
 )
 

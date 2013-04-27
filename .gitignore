@@ -1,7 +1,8 @@
 .env
-openphoto_utils.egg-info
+pyopenphoto.egg-info
 *.pyc
 *.ini
+__pycache__
 .tox
 .coverage
 build
