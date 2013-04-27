@@ -96,8 +96,9 @@ class TestOpenPhotoObject(unittest.TestCase):
         try:
             OpenPhotoObject.create_path = "/create_path"
             resp = self.client.post.return_value
+            resp.json.return_value = dict(result=dict(res1=1,res2=2))
             obj = OpenPhotoObject.create(self.client, attr1=1, attr2=2)
-            self.assertIs(obj.data, resp.json.return_value)
+            self.assertIs(obj.data, resp.json.return_value['result'])
             self.assertTrue(self.client.post.called_with('/create_path', attr1=1, attr2=2))
         finally:
             OpenPhotoObject.create_path = ocp
