@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import os
 from .base import Base
 from .action import (Comment,
                      Favorite)
@@ -41,6 +42,16 @@ class Photo(Base):
                     file_.write(chunk)
             else:
                 return response.iter_content(chunk_size=chunk_size)
+
+        except Exception as e:
+            try:
+                os.unlink(destination)
+
+            except:  # pragma: nocover
+                pass
+
+            finally:
+                raise e
 
         finally:
             if close_file:
