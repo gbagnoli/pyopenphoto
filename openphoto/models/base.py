@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import functools
+from ..utils import assert_kwargs_empty
 
 
 class Base(object):
@@ -78,9 +79,12 @@ class Base(object):
 
     list = all
 
-    def url(self, operation, extension=".json"):
-        extension = extension or ""
-        return "{0}/{1}/{2}{3}".format(self.object_path, self.id, operation,
+    def url(self, *path, **kwargs):
+        extension = kwargs.pop("extension", ".json") or ""
+        assert_kwargs_empty(kwargs)
+        path = "/".join(path)
+
+        return "{0}/{1}/{2}{3}".format(self.object_path, self.id, path,
                                        extension)
 
     def delete(self):

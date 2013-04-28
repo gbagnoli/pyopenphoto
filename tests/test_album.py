@@ -25,3 +25,17 @@ class TestAlbum(unittest.TestCase):
         self.assertTrue(iterate_mock.called_with(self.client, partial_mock.return_value,
                                                  klass=Photo))
 
+    def test_add_remove(self):
+        objs = [Photo(self.client, {'id': 1}), Photo(self.client, {'id': 2})]
+        add_url = "/album/myid/photo/add.json"
+        remove_url = "/album/myid/photo/remove.json"
+
+        self.album.add(objs)
+        self.assertTrue(self.client.post.called_with(add_url,
+                                                     data={'ids': "1,2"}))
+        self.album.remove(objs)
+        self.assertTrue(self.client.post.called_with(remove_url,
+                                                     data={"ids": "1,2"}))
+        self.album.remove(objs[0])
+        self.assertTrue(self.client.post.called_with(remove_url,
+                                                     data={"ids": "1"}))

@@ -1,11 +1,13 @@
 #!/usr/bin/env python
+import sys
 
-try:
-    stringcls = basestring
-    stringcls  # pragma: no cover
+PY3 = sys.version_info[0] == 3
 
-except NameError:  # pragma: no cover
+if PY3:  # pragma: no cover
     stringcls = str
+
+else:  # pragma: no cover
+    stringcls = basestring
 
 
 __all__ = ["stringcls"]

@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 from .base import Base
+from ..utils import assert_kwargs_empty
+
 
 class Action(Base):
 
@@ -30,11 +32,7 @@ class Action(Base):
             if value:
                 params[cls._convert_attr(attr)] = value
 
-        if len(kwargs):
-            fmt = "', '".join(list(kwargs.keys()))
-            raise TypeError(
-                "'{0}': invalid keyword argument for this function".format(fmt))
-
+        assert_kwargs_empty(kwargs)
         return super(Action, klass).create(client, path=url, **params)
 
 

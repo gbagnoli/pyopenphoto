@@ -47,6 +47,13 @@ class TestBase(unittest.TestCase):
             Base.object_path = "/object"
             obj = Base(self.client, dict(id=1))
             self.assertEqual(obj.url("test"), "/object/1/test.json")
+            self.assertEqual(obj.url("test", "multiple", "action"),
+                             "/object/1/test/multiple/action.json")
+            self.assertEqual(obj.url("test", "no", "ext", extension=None),
+                             "/object/1/test/no/ext")
+            with self.assertRaises(TypeError):
+                obj.url("test", wrong="arg")
+
         finally:
             Base.create_path = oop
 
