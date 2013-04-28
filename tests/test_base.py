@@ -131,3 +131,15 @@ class TestBase(unittest.TestCase):
         self.assertTrue(partial.called_with(params=dict(pageSize=Base.page_size,
                                                         page=2)))
 
+        expected2 = dict(res3=3, res4=4)
+        partial = mock.MagicMock()
+        resmock = mock.MagicMock()
+        partial.return_value = resmock
+        resmock.json.return_value = dict(result=[expected, expected2])
+        klass = mock.MagicMock()
+        res1, res2 = list(Base.iterate(self.client, partial, klass=klass, paginate=False))
+
+        self.assertTrue(partial.called)
+        self.assertIs(res1, klass.return_value)
+        self.assertIs(res2, klass.return_value)
+
