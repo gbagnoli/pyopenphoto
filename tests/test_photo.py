@@ -40,6 +40,19 @@ class TestPhoto(unittest.TestCase):
         self.assertTrue(icontent.called_with(chunk_size=1024))
         self.assertTrue(file_mock.write.called_with("1"))
 
+    @mock.patch(open_name)
+    def test_download_to_fileobj(self, open_mock):
+        file_mock = mock.Mock()
+        icontent = self.client.get.return_value.iter_content
+        icontent.return_value = ["1"]
+        res = self.photo.download(destination=file_mock, mode="wb", chunk_size=1024)
+        self.assertIs(res, None)
+        self.assertFalse(open_mock.called)
+        self.assertFalse(file_mock.close.called)
+        self.assertTrue(self.client.get.called_with("/photo/myid/download", stram=True))
+        self.assertTrue(icontent.called_with(chunk_size=1024))
+        self.assertTrue(file_mock.write.called_with("1"))
+
     def test_download_iter(self):
         res_mock = self.client.get.return_value
         icontent = res_mock.iter_content
@@ -47,11 +60,23 @@ class TestPhoto(unittest.TestCase):
         self.assertIs(res, icontent.return_value)
         self.assertTrue(icontent.called_with(chunk_size=1024))
 
-    @mock.patch(open_name, side_effect=OSError)
+    @mock.patch(open_name)
     @mock.patch("os.unlink")
-    def test_download_unlink(self, unlink_mock, open_mock):
+    def test_download_error_unlink(self, unlink_mock, open_mock):
+        self.client.get.configure_mock(side_effect=OSError)
         with self.assertRaises(OSError):
             self.photo.download("destination")
 
         self.assertTrue(unlink_mock.called_with("destination"))
+
+    @mock.patch(open_name)
+    @mock.patch("os.unlink")
+    def test_download_error_fileobj(self, unlink_mock, open_mock):
+        file_mock = mock.Mock()
+        self.client.get.configure_mock(side_effect=OSError)
+        with self.assertRaises(OSError):
+            self.photo.download(destination=file_mock)
+
+        self.assertFalse(unlink_mock.called)
+        self.assertFalse(open_mock.called)
 

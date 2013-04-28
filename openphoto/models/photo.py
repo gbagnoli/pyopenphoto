@@ -45,7 +45,8 @@ class Photo(Base):
 
         except Exception as e:
             try:
-                os.unlink(destination)
+                if close_file:
+                    os.unlink(destination)
 
             except:  # pragma: nocover
                 pass
