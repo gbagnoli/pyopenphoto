@@ -25,7 +25,7 @@ setup(name="pyopenphoto",
       description="OpenPhoto API client",
       author="Giacomo Bagnoli",
       author_email="gbagnoli@gmail.com",
-      packages=["openphoto"],
+      packages=["openphoto", "openphoto.models"],
       **kw
 )
 
