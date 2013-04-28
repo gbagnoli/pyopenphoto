@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from openphoto.models import Album, Photo, Base
+from openphoto.models import Album, Photo
 from compat import (mock,
                     unittest)
 
@@ -14,16 +14,21 @@ class TestAlbum(unittest.TestCase):
     def test_cover(self):
         self.assertDictEqual(self.album.cover.data, dict(id="cover"))
         self.assertIsInstance(self.album.cover, Photo)
+        self.assertFalse(isinstance(self.album.data['cover'], Photo))
 
-    @mock.patch("functools.partial")
-    @mock.patch.object(Base, "iterate")
-    def test_photos(self, iterate_mock, partial_mock):
-        url = Photo.collection_path + "/album-myid/list.json"
-        res = self.album.photos()
-        self.assertIs(res, iterate_mock.return_value)
-        self.assertTrue(partial_mock.called_with(self.client.request, "get", url))
-        self.assertTrue(iterate_mock.called_with(self.client, partial_mock.return_value,
-                                                 klass=Photo))
+        al = Album(self.client, {"id": "test"})
+        self.assertIs(al.cover, None)
+
+    def test_photos(self):
+        self.assertTrue(len(self.album.photos) == 0)
+        photos = [dict(first=1), dict(second=2)]
+        info = dict(photos=photos)
+        self.client.get.return_value.json.return_value = dict(result=info)
+        self.album.refresh()
+        self.assertEqual(len(self.album.photos), 2)
+        self.assertIs(self.client, self.album.photos[0].client)
+        self.assertEqual(self.album.photos[0].data, dict(first=1))
+        self.assertIsInstance(self.album.photos[0], Photo)
 
     def test_add_remove(self):
         objs = [Photo(self.client, {'id': 1}), Photo(self.client, {'id': 2})]

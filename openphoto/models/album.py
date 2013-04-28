@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-import functools
-from .base import Base
+from .base import (Base,
+                   Relationship)
 from .photo import Photo
 from ..utils import is_iterable_container
 
@@ -9,15 +9,8 @@ from ..utils import is_iterable_container
 class Album(Base):
     collection_path = "/albums"
     object_path = "/album"
-
-    def __init__(self, client, data):
-        super(Album, self).__init__(client, data)
-        self.cover = Photo(self.client, data['cover'])
-
-    def photos(self):
-        url = "{0}/album-{1}/list.json".format(Photo.collection_path, self.id)
-        partial = functools.partial(self.client.request, "get", url)
-        return self.iterate(self.client, partial, klass=Photo)
+    relationships = (Relationship("photos", Photo),
+                     Relationship("cover", Photo, "single"))
 
     @classmethod
     def create(self, **kwargs):

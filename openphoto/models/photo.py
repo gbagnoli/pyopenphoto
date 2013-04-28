@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 
 import os
-from .base import Base
+from .base import (Base,
+                   Relationship)
 from .action import (Comment,
                      Favorite)
 from ..compat import stringcls
@@ -11,6 +12,8 @@ class Photo(Base):
     collection_path = "/photos"
     object_path = "/photo"
     create_path = "/photos/upload.json"
+    relationships = (Relationship("albums", "openphoto.models.Album"),
+                     Relationship("tags", "openphoto.models.Tag"))
 
     @classmethod
     def create(cls, client, **kwargs):
