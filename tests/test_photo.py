@@ -105,3 +105,7 @@ class TestPhoto(unittest.TestCase):
         self.assertEqual(tags[0].id, "a")
         self.assertEqual(tags[1].id, "b")
         self.assertIs(self.photo._tags, tags)
+
+    def test_albums(self):
+        with self.assertRaises(NotImplementedError):
+            self.photo.albums()

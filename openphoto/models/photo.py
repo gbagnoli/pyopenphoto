@@ -45,6 +45,9 @@ class Photo(Base):
         tags = [Tag(self.client, {"id": data}) for data in tags_ids]
         object.__setattr__(self, "_tags", tags)
 
+    def albums(self):
+        raise NotImplementedError("Remote API does not provide this information")
+
     def paths(self):
         if self._paths is None:
             self.view()
