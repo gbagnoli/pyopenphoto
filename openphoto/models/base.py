@@ -64,7 +64,8 @@ class Base(object):
     @classmethod
     def get(cls, client, id):
         obj = cls(client, {"id":id})
-        return obj.view()
+        obj.view()
+        return obj
 
     def view(self):
         params = dict(includeElements=1)
