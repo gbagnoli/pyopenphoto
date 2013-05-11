@@ -14,16 +14,17 @@ class TestAlbum(unittest.TestCase):
     def test_cover(self):
         self.assertDictEqual(self.album.cover.data, dict(id="cover"))
         self.assertIsInstance(self.album.cover, Photo)
+        self.assertDictEqual(self.album.cover.data, self.album.data['cover'])
 
     @mock.patch("functools.partial")
     @mock.patch.object(Base, "iterate")
     def test_photos(self, iterate_mock, partial_mock):
-        url = Photo.collection_path + "/album-myid/list.json"
+        self.assertIs(self.album._photos, None)
         res = self.album.photos()
-        self.assertIs(res, iterate_mock.return_value)
-        self.assertTrue(partial_mock.called_with(self.client.request, "get", url))
-        self.assertTrue(iterate_mock.called_with(self.client, partial_mock.return_value,
-                                                 klass=Photo))
+        self.assertEqual(self.album._photos, [])
+        self.assertIs(self.album._photos, res)
+        view_url = self.album.url("view")
+        self.assertTrue(self.client.get.called_with(view_url))
 
     def test_add_remove(self):
         objs = [Photo(self.client, {'id': 1}), Photo(self.client, {'id': 2})]

@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-import functools
 from .base import Base
 from .photo import Photo
 from ..utils import is_iterable_container
@@ -12,12 +11,25 @@ class Album(Base):
 
     def __init__(self, client, data):
         super(Album, self).__init__(client, data)
-        self.cover = Photo(self.client, data['cover'])
+        object.__setattr__(self, "cover", Photo(self.client, data['cover']))
+        object.__setattr__(self, "_photos", None)
+
+    def _set_photos(self):
+        object.__setattr__(
+            self, "_photos",
+            [Photo(self.client, d) for d in self.data["photos"]]
+        )
 
     def photos(self):
-        url = "{0}/album-{1}/list.json".format(Photo.collection_path, self.id)
-        partial = functools.partial(self.client.request, "get", url)
-        return self.iterate(self.client, partial, klass=Photo)
+        if self._photos is None:
+            self.view()
+            self._set_photos()
+
+        return self._photos
+
+    def view(self):
+        super(Album, self).view()
+        self._set_photos()
 
     @classmethod
     def create(self, **kwargs):
