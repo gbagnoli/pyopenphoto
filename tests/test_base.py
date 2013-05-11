@@ -112,8 +112,8 @@ class TestBase(unittest.TestCase):
         self.client.get.return_value = response_mock
         expected = dict(res1=1, res2=2)
         response_mock.json.return_value = dict(result=expected)
-        obj = Base.get(self.client, "id")
-        url = "{0}/id/view.json".format(Base.object_path)
+        obj = Base.get(self.client, "id", "test.json")
+        url = "{0}/id/test.json".format(Base.object_path)
         self.assertTrue(self.client.get.called_with(url))
         self.assertDictEqual(obj.data, expected)
         self.assertIs(self.client, obj.client)

@@ -1,33 +1,6 @@
 #!/usr/bin/env python
 import functools
 from ..utils import assert_kwargs_empty
-from ..compat import stringcls
-
-
-class Relationship(object):
-
-    def __init__(self, attribute, klass, type="many"):
-        self.attribute = attribute
-        self.klass = klass
-        if type not in ("many", "single"):
-            raise ValueError("Invalid relation type '%s'" % (type))
-
-        self.type = type
-
-    def resolve(self, klass):
-        if not isinstance(klass, stringcls):
-            return klass
-
-        mname, clsname = klass.rsplit(".", 1)
-        module = __import__(mname, fromlist=[clsname])
-        return getattr(module, clsname)
-
-    def to_obj(self, client, data):
-        self.klass = self.resolve(self.klass)
-        if self.type == "many":
-            return [self.klass(client, d) for d in data]
-        else:
-            return self.klass(client, data)
 
 
 class Base(object):
@@ -35,7 +8,6 @@ class Base(object):
     collection_path = None
     object_path = None
     create_path = None
-    relationships = tuple()
 
     @classmethod
     def iterate(cls, client, partial, klass=None, paginate=True):
@@ -58,19 +30,6 @@ class Base(object):
     def __init__(self, client, data):
         object.__setattr__(self, "client", client)
         object.__setattr__(self, "data", data)
-        self._update_relationships()
-
-    def _update_relationships(self):
-        for r in self.relationships:
-            if r.attribute in self.data and self.data[r.attribute]:
-                value = r.to_obj(self.client, self.data[r.attribute])
-            else:
-                if r.type == "many":
-                    value = []
-                else:
-                    value = None
-
-            object.__setattr__(self, r.attribute, value)
 
     def _convert_attr(self, attr):
         if "_" in attr:
@@ -103,9 +62,10 @@ class Base(object):
         return cls(client, response.json()['result'])
 
     @classmethod
-    def get(cls, client, id):
-        obj = cls(client, {"id":id})
-        return obj.view()
+    def get(cls, client, id, endpoint="view.json"):
+        response = client.get("{0}/{1}/{2}".format(cls.object_path, id, endpoint))
+        data = response.json()['result']
+        return cls(client, data)
 
     @classmethod
     def search(cls, client, paginate=True, **kwargs):
@@ -132,18 +92,6 @@ class Base(object):
 
     def update(self):
         return self.client.post(self.url("update"), data=self.data).json()
-
-    save = update
-
-    def view(self):
-        params = dict(includeElements=1)
-        response = self.client.get(self.url("view"), params=params)
-        data = response.json()['result']
-        object.__setattr__(self, "data", data)
-        self._update_relationships()
-        return self
-
-    refresh = view
 
     def __repr__(self):
         return "<{0} {1}>".format(self.__class__.__name__, self.id)
