@@ -32,7 +32,10 @@ class Client(object):
         if "auth" in kwargs:
             raise ValueError("request() called with auth")
         kwargs['auth'] = self.auth
-        response = self.session.request(method, self.url(endpoint), **kwargs)
+        return self.request_full_url(method, self.url(endpoint), **kwargs)
+
+    def request_full_url(self, method, url, **kwargs):
+        response = self.session.request(method, url, **kwargs)
         response.raise_for_status()
         return response
 
