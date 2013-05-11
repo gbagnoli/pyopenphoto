@@ -12,6 +12,52 @@ class Photo(Base):
     object_path = "/photo"
     create_path = "/photos/upload.json"
 
+    def __init__(self, client, data):
+        super(Photo, self).__init__(client, data)
+        object.__setattr__(self, "_tags", None)
+        self._set_paths()
+
+    def view(self):
+        super(Photo, self).view()
+        self._set_paths()
+        self._set_tags()
+
+    def _set_paths(self):
+        paths_keys = [k for k in self.data.keys() if k.startswith("path")]
+        if not paths_keys:
+            self._paths = None
+            return
+
+        paths = {}
+        for k in paths_keys:
+            key = k.replace("path", "").lower()
+            paths[key] = self.data[k].replace("\\", "")
+            del self.data[k]
+
+        object.__setattr__(self, "_paths", paths)
+
+    def _set_tags(self):
+        from .tag import Tag  # avoid circular imports
+        if "tags" in self.data:
+            tags_ids = self.data['tags']
+        else:
+            tags_ids = []
+        tags = [Tag(self.client, {"id": data}) for data in tags_ids]
+        object.__setattr__(self, "_tags", tags)
+
+    def paths(self):
+        if self._paths is None:
+            self.view()
+
+        return self._paths
+
+    def tags(self):
+        if self._tags is None:
+            self.view()
+            self._set_tags()
+
+        return self._tags
+
     @classmethod
     def create(cls, client, **kwargs):
         # TODO

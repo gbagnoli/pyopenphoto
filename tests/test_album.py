@@ -12,7 +12,6 @@ class TestAlbum(unittest.TestCase):
         self.album = Album(self.client, self.album_attr)
 
     def test_cover(self):
-        self.assertDictEqual(self.album.cover.data, dict(id="cover"))
         self.assertIsInstance(self.album.cover, Photo)
         self.assertDictEqual(self.album.cover.data, self.album.data['cover'])
 

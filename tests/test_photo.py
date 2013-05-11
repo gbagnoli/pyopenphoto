@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from openphoto.models import Photo, Comment, Favorite
+from openphoto.models import Photo, Comment, Favorite, Tag
 from compat import (mock,
                     unittest,
                     builtins_name)
@@ -80,3 +80,28 @@ class TestPhoto(unittest.TestCase):
         self.assertFalse(unlink_mock.called)
         self.assertFalse(open_mock.called)
 
+    def test_paths(self):
+        self.assertEqual(self.photo._paths, None)
+        self.client.get.return_value.json.return_value = {
+            "result": {
+                "path1": r"http:\/\/test/url",
+                "path2": "2"
+            }
+        }
+        paths = self.photo.paths()
+        self.assertEqual(paths, {"1":"http://test/url", "2":"2"})
+        self.assertIs(paths, self.photo._paths)
+
+    def test_tags(self):
+        self.assertEqual(self.photo._tags, None)
+        self.client.get.return_value.json.return_value = {
+            "result": {
+                "tags" : ["a", "b"]
+            }
+        }
+        tags = self.photo.tags()
+        self.assertEqual(len(tags), 2)
+        self.assertIsInstance(tags[0], Tag)
+        self.assertEqual(tags[0].id, "a")
+        self.assertEqual(tags[1].id, "b")
+        self.assertIs(self.photo._tags, tags)
