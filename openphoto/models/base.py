@@ -62,10 +62,18 @@ class Base(object):
         return cls(client, response.json()['result'])
 
     @classmethod
-    def get(cls, client, id, endpoint="view.json"):
-        response = client.get("{0}/{1}/{2}".format(cls.object_path, id, endpoint))
+    def get(cls, client, id):
+        obj = cls(client, {"id":id})
+        return obj.view()
+
+    def view(self):
+        params = dict(includeElements=1)
+        response = self.client.get(self.url("view"), params=params)
         data = response.json()['result']
-        return cls(client, data)
+        object.__setattr__(self, "data", data)
+        return self
+
+    refresh = view
 
     @classmethod
     def search(cls, client, paginate=True, **kwargs):
