@@ -156,10 +156,10 @@ class Photo(Base):
                 result[k] = [cls(self.client, d) for d in response[k]]
         return result
 
-    def next(self):
+    def get_next(self):
         return self.nextprevious()['next']
 
-    def previous(self):
+    def get_previous(self):
         return self.nextprevious()['previous']
 
     def stream(self, reverse=False):

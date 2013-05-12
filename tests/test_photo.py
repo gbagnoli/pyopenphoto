@@ -124,8 +124,8 @@ class TestPhoto(unittest.TestCase):
             }
         }
         res = self.photo.nextprevious()
-        nx = self.photo.next()
-        pv = self.photo.previous()
+        nx = self.photo.get_next()
+        pv = self.photo.get_previous()
         for i in range(2):
             self.assertEqual(nx[i].id, res['next'][i].id)
             self.assertEqual(pv[i].id, res['previous'][i].id)
