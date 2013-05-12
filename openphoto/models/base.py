@@ -69,12 +69,15 @@ class Base(object):
         obj.view(**kwargs)
         return obj
 
+    def _update_data(self, data):
+        object.__setattr__(self, "data", data)
+
     def view(self, **kwargs):
         params = dict(includeElements=1)
         params.update(kwargs)
         response = self.client.get(self.url("view"), params=params)
         data = response.json()['result']
-        object.__setattr__(self, "data", data)
+        self._update_data(data)
         return self
 
     refresh = view

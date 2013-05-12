@@ -77,13 +77,14 @@ class Photo(Base):
 
     def __init__(self, client, data):
         super(Photo, self).__init__(client, data)
-        object.__setattr__(self, "_tags", None)
         size_mgr = PhotoSizeManager(self)
         object.__setattr__(self, "sizes", size_mgr)
-        self._set_paths()
+        self._update_data(data)
+        if not self._tags:
+            object.__setattr__(self, "_tags", None)
 
-    def view(self, **kwargs):
-        super(Photo, self).view(**kwargs)
+    def _update_data(self, data):
+        super(Photo, self)._update_data(data)
         self._set_paths()
         self._set_tags()
 
@@ -133,18 +134,22 @@ class Photo(Base):
 
     def add_comment(self, user_email, message, name=None, website=None,
                     target_url=None, permalink=None):
-       return Comment.create(self.client, self.id, user_email, message,
+        """ Adds a comment to the photo """
+        return Comment.create(self.client, self.id, user_email, message,
                              name, website, target_url, permalink)
 
     def favorite(self, user_email, message="", name=None, website=None,
                     target_url=None, permalink=None):
-       return Favorite.create(self.client, self.id, user_email, message,
+        """ Adds a favorite for the photo """
+        return Favorite.create(self.client, self.id, user_email, message,
                               name, website, target_url, permalink)
 
     def download(self, destination=None, mode="wb", chunk_size=4096):
+        """ Shortcut to download original photo """
         return self.sizes['original'].download(destination, mode, chunk_size)
 
     def nextprevious(self):
+        """ Get next/previous photo(s) at once """
         cls = self.__class__
         url = self.url("nextprevious", "list")
         response = self.client.get(url).json()["result"]
@@ -163,6 +168,7 @@ class Photo(Base):
         return self.nextprevious()['previous']
 
     def stream(self, reverse=False):
+        """ Returns an iterator to iterate over next/previous """
         key = "next"
         if reverse:
             key = "previous"
@@ -175,3 +181,23 @@ class Photo(Base):
             yield nxpv[key][0]
             current = nxpv[key][0]
 
+    def replace(self, source):
+        """ Replace the binary image file (and hash) """
+        raise NotImplementedError()
+
+    def transform(self, **kwargs):
+        """ Transform a photo by rotating/BW/etc """
+        url = self.url("transform")
+        response = self.client.post(url, data=kwargs)
+        self._update_data(response.json()["result"])
+        return self
+
+    @classmethod
+    def update_batch(self, client, photos, data):
+        """ Updates multiple photos at once """
+        raise NotImplementedError()
+
+    @classmethod
+    def delete_batch(self, client, photos):
+        """ Deletes multiple photos at once """
+        raise NotImplementedError()
