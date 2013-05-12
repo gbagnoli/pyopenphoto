@@ -7,6 +7,69 @@ from .action import (Comment,
 from ..compat import stringcls
 
 
+class PhotoSizeManager(object):
+
+    def __init__(self, photo):
+        self.client = photo.client
+        self.photo = photo
+
+    def get_sizes(self, sizes):
+        if isinstance(sizes, stringcls):
+            sizes = [sizes]
+        returnSizes = ",".join(sizes)
+        if self.photo._paths is None:
+            self.photo.view(returnSizes=returnSizes)
+
+        else:
+            sizes_set = set(sizes)
+            if sizes_set & set(self.photo._paths) != sizes_set:
+                self.photo.view(returnSizes=returnSizes)
+
+        return [PhotoSize(self.photo.paths()[s], self.client, self.photo)
+                for s in sizes]
+
+    def __getitem__(self, size):
+        return self.get_sizes(size)[0]
+
+
+class PhotoSize(object):
+
+    def __init__(self, url, client, photo):
+        self.client = client
+        self.photo = photo
+        self.url = url
+
+    def download(self, destination=None, mode="wb", chunk_size=4096):
+        close_file = False
+        file_ = destination
+        try:
+            if destination and isinstance(destination, stringcls):
+                file_ = open(destination, mode)
+                close_file = True
+
+            response = self.client.request_full_url("get", self.url, stream=True)
+            if destination:
+                for chunk in response.iter_content(chunk_size=chunk_size):
+                    file_.write(chunk)
+            else:
+                return response.iter_content(chunk_size=chunk_size)
+
+        except Exception as e:
+            try:
+                if close_file:
+                    os.unlink(destination)
+
+            except:  # pragma: nocover
+                pass
+
+            finally:
+                raise e
+
+        finally:
+            if close_file:
+                file_.close()
+
+
 class Photo(Base):
     collection_path = "/photos"
     object_path = "/photo"
@@ -15,10 +78,12 @@ class Photo(Base):
     def __init__(self, client, data):
         super(Photo, self).__init__(client, data)
         object.__setattr__(self, "_tags", None)
+        size_mgr = PhotoSizeManager(self)
+        object.__setattr__(self, "sizes", size_mgr)
         self._set_paths()
 
-    def view(self):
-        super(Photo, self).view()
+    def view(self, **kwargs):
+        super(Photo, self).view(**kwargs)
         self._set_paths()
         self._set_tags()
 
@@ -77,32 +142,5 @@ class Photo(Base):
                               name, website, target_url, permalink)
 
     def download(self, destination=None, mode="wb", chunk_size=4096):
-        close_file = False
-        file_ = destination
-        try:
-            if destination and isinstance(destination, stringcls):
-                file_ = open(destination, mode)
-                close_file = True
+        return self.sizes['original'].download(destination, mode, chunk_size)
 
-            url = self.url("download", extension=None)
-            response = self.client.get(url, stream=True)
-            if destination:
-                for chunk in response.iter_content(chunk_size=chunk_size):
-                    file_.write(chunk)
-            else:
-                return response.iter_content(chunk_size=chunk_size)
-
-        except Exception as e:
-            try:
-                if close_file:
-                    os.unlink(destination)
-
-            except:  # pragma: nocover
-                pass
-
-            finally:
-                raise e
-
-        finally:
-            if close_file:
-                file_.close()

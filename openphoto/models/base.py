@@ -17,6 +17,8 @@ class Base(object):
             result = True
             while result:
                 data = dict(pageSize=cls.page_size, page=page)
+                if "params" in partial.keywords:
+                    data.update(partial.keywords['params'])
                 result = partial(params=data).json()['result']
                 for data in result:
                     yield klass(client, data)
@@ -62,9 +64,9 @@ class Base(object):
         return cls(client, response.json()['result'])
 
     @classmethod
-    def get(cls, client, id):
+    def get(cls, client, id, **kwargs):
         obj = cls(client, {"id":id})
-        obj.view()
+        obj.view(**kwargs)
         return obj
 
     def view(self, **kwargs):
@@ -80,7 +82,8 @@ class Base(object):
     @classmethod
     def all(cls, client, paginate=True, **kwargs):
         url = "{0}/list.json".format(cls.collection_path)
-        partial = functools.partial(client.request, "get", url, **kwargs)
+        params = kwargs
+        partial = functools.partial(client.request, "get", url, params=params)
         return cls.iterate(client, partial, paginate=paginate)
 
     list = all

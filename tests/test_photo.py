@@ -49,12 +49,12 @@ class TestPhoto(unittest.TestCase):
         self.assertIs(res, None)
         self.assertFalse(open_mock.called)
         self.assertFalse(file_mock.close.called)
-        self.assertTrue(self.client.get.called_with("/photo/myid/download", stram=True))
+        self.assertTrue(self.client.get.called_with("/photo/myid/download", stream=True))
         self.assertTrue(icontent.called_with(chunk_size=1024))
         self.assertTrue(file_mock.write.called_with("1"))
 
     def test_download_iter(self):
-        res_mock = self.client.get.return_value
+        res_mock = self.client.request_full_url.return_value
         icontent = res_mock.iter_content
         res = self.photo.download(chunk_size=1024)
         self.assertIs(res, icontent.return_value)
