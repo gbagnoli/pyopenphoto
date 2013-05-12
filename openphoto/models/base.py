@@ -67,8 +67,9 @@ class Base(object):
         obj.view()
         return obj
 
-    def view(self):
+    def view(self, **kwargs):
         params = dict(includeElements=1)
+        params.update(kwargs)
         response = self.client.get(self.url("view"), params=params)
         data = response.json()['result']
         object.__setattr__(self, "data", data)
@@ -77,14 +78,10 @@ class Base(object):
     refresh = view
 
     @classmethod
-    def search(cls, client, paginate=True, **kwargs):
+    def all(cls, client, paginate=True, **kwargs):
         url = "{0}/list.json".format(cls.collection_path)
         partial = functools.partial(client.request, "get", url, **kwargs)
         return cls.iterate(client, partial, paginate=paginate)
-
-    @classmethod
-    def all(cls, client, paginate=True):
-        return cls.search(client, paginate)
 
     list = all
 
@@ -104,4 +101,3 @@ class Base(object):
 
     def __repr__(self):
         return "<{0} {1}>".format(self.__class__.__name__, self.id)
-

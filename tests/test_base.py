@@ -85,19 +85,14 @@ class TestBase(unittest.TestCase):
         obj = Base(self.client, {"id":1})
         self.assertEqual(repr(obj), "<Base 1>")
 
-    @mock.patch.object(Base, "search")
-    def test_all(self, search_mock):
-        self.assertIs(Base.all(self.client), search_mock.return_value)
-        self.assertTrue(search_mock.called_with(self.client))
-
     @mock.patch.object(Base, "iterate")
     @mock.patch("functools.partial")
-    def test_search(self, partial_mock, iterate_mock):
+    def test_all(self, partial_mock, iterate_mock):
         ocp = Base.collection_path
         try:
             Base.collection_path = "/collection"
             params = dict(param1=1, param2=2)
-            res = Base.search(self.client, **params)
+            res = Base.all(self.client, **params)
             self.assertIs(res, iterate_mock.return_value)
             self.assertTrue(iterate_mock.called_with(self.client,
                                                      partial_mock.return_value))

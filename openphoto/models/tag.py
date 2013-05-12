@@ -10,14 +10,8 @@ class Tag(Base):
     object_path = "/tag"
 
     @classmethod
-    def search(cls, client, paginate=False):
-        if paginate:
-            raise ValueError("Tag class does not support paginate in list")
-        return super(Tag, cls).search(client, paginate=False)
-
-    @classmethod
     def all(cls, client):
-        return cls.search(client)
+        return super(Tag, cls).all(client, paginate=False)
 
     def photos(self, **kwargs):
         url = "{0}/tags-{1}/list.json".format(Photo.collection_path, self.id)

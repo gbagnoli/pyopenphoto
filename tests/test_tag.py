@@ -11,15 +11,15 @@ class TestTag(unittest.TestCase):
         self.tag_attr = dict(id="mytag", attr1=1, attr2=2)
         self.tag = Tag(self.client, self.tag_attr)
 
-    @mock.patch.object(Base, "search")
-    def test_search(self, super_search):
-        with self.assertRaises(ValueError):
-            Tag.search(self.client, paginate=True)
+    @mock.patch.object(Base, "all")
+    def test_all(self, super_all):
+        with self.assertRaises(TypeError):
+            Tag.all(self.client, paginate=True)
 
-        res = Tag.search(self.client)
-        self.assertIs(res, super_search.return_value)
         res = Tag.all(self.client)
-        self.assertIs(res, super_search.return_value)
+        self.assertIs(res, super_all.return_value)
+        res = Tag.all(self.client)
+        self.assertIs(res, super_all.return_value)
 
     @mock.patch("functools.partial")
     @mock.patch.object(Base, "iterate")
