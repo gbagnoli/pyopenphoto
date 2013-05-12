@@ -134,23 +134,28 @@ class TestPhoto(unittest.TestCase):
         json = self.client.get.return_value.json
         json.return_value ={"result": {}}
         g = self.photo.stream()
+        if hasattr(g, "next"):
+            met = "next"
+        else:
+            met = "__next__"
         with self.assertRaises(StopIteration):
-            g.next()
+            getattr(g, met)()
 
         g = self.photo.stream(reverse=True)
         with self.assertRaises(StopIteration):
-            g.next()
+            getattr(g, met)()
 
         json.return_value = {"result": {"next": [{"id": 1}]}}
 
         g = self.photo.stream()
-        p = g.next()
+        p = getattr(g, met)()
+
         self.assertEqual(p.id, 1)
 
         json.return_value = {"result": {"next": [{"id": 2}]}}
-        p = g.next()
+        p = getattr(g, met)()
         self.assertEqual(p.id, 2)
 
         json.return_value = {"result": {}}
         with self.assertRaises(StopIteration):
-            p = g.next()
+            getattr(g, met)()
