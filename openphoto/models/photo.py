@@ -90,7 +90,7 @@ class Photo(Base):
     def _set_paths(self):
         paths_keys = [k for k in self.data.keys() if k.startswith("path")]
         if not paths_keys:
-            self._paths = None
+            object.__setattr__(self, "_paths", None)
             return
 
         paths = {}
@@ -143,4 +143,35 @@ class Photo(Base):
 
     def download(self, destination=None, mode="wb", chunk_size=4096):
         return self.sizes['original'].download(destination, mode, chunk_size)
+
+    def nextprevious(self):
+        cls = self.__class__
+        url = self.url("nextprevious", "list")
+        response = self.client.get(url).json()["result"]
+        result = {}
+        for k in ("next", "previous"):
+            if not k in response:
+                result[k] = []
+            else:
+                result[k] = [cls(self.client, d) for d in response[k]]
+        return result
+
+    def next(self):
+        return self.nextprevious()['next']
+
+    def previous(self):
+        return self.nextprevious()['previous']
+
+    def stream(self, reverse=False):
+        key = "next"
+        if reverse:
+            key = "previous"
+
+        current = self
+        while True:
+            nxpv = current.nextprevious()
+            if not nxpv[key]:
+                raise StopIteration()
+            yield nxpv[key][0]
+            current = nxpv[key][0]
 

@@ -11,7 +11,8 @@ class TestPhoto(unittest.TestCase):
 
     def setUp(self):
         self.client = mock.MagicMock()
-        self.photo_attr = dict(id="myid", attr1=1, attr2=2)
+        self.photo_attr = dict(id="myid", attr1=1, attr2=2,
+                               pathOriginal="/my/path.jpg")
         self.photo = Photo(self.client, self.photo_attr)
 
     @mock.patch.object(Comment, "create")
@@ -63,7 +64,7 @@ class TestPhoto(unittest.TestCase):
     @mock.patch(open_name)
     @mock.patch("os.unlink")
     def test_download_error_unlink(self, unlink_mock, open_mock):
-        self.client.get.configure_mock(side_effect=OSError)
+        self.client.request_full_url.configure_mock(side_effect=OSError)
         with self.assertRaises(OSError):
             self.photo.download("destination")
 
@@ -73,7 +74,7 @@ class TestPhoto(unittest.TestCase):
     @mock.patch("os.unlink")
     def test_download_error_fileobj(self, unlink_mock, open_mock):
         file_mock = mock.Mock()
-        self.client.get.configure_mock(side_effect=OSError)
+        self.client.request_full_url.configure_mock(side_effect=OSError)
         with self.assertRaises(OSError):
             self.photo.download(destination=file_mock)
 
@@ -81,7 +82,8 @@ class TestPhoto(unittest.TestCase):
         self.assertFalse(open_mock.called)
 
     def test_paths(self):
-        self.assertEqual(self.photo._paths, None)
+        self.assertEqual(self.photo._paths, {"original": "/my/path.jpg"})
+        object.__setattr__(self.photo, "_paths", None)
         self.client.get.return_value.json.return_value = {
             "result": {
                 "path1": r"http:\/\/test/url",
@@ -96,7 +98,7 @@ class TestPhoto(unittest.TestCase):
         self.assertEqual(self.photo._tags, None)
         self.client.get.return_value.json.return_value = {
             "result": {
-                "tags" : ["a", "b"]
+                "tags": ["a", "b"]
             }
         }
         tags = self.photo.tags()
@@ -109,3 +111,46 @@ class TestPhoto(unittest.TestCase):
     def test_albums(self):
         with self.assertRaises(NotImplementedError):
             self.photo.albums()
+
+    def test_nextprev(self):
+        self.client.get.return_value.json.return_value = {"result": {}}
+        res = self.photo.nextprevious()
+        self.assertEqual(res['next'], res['previous'])
+        self.assertEqual(res['next'], [])
+        self.client.get.return_value.json.return_value = {
+            "result": {
+                "next": [{"id": 1}, {"id": 2}],
+                "previous": [{"id": 3}, {"id": 4}]
+            }
+        }
+        res = self.photo.nextprevious()
+        nx = self.photo.next()
+        pv = self.photo.previous()
+        for i in range(2):
+            self.assertEqual(nx[i].id, res['next'][i].id)
+            self.assertEqual(pv[i].id, res['previous'][i].id)
+
+    def test_stream(self):
+        json = self.client.get.return_value.json
+        json.return_value ={"result": {}}
+        g = self.photo.stream()
+        with self.assertRaises(StopIteration):
+            g.next()
+
+        g = self.photo.stream(reverse=True)
+        with self.assertRaises(StopIteration):
+            g.next()
+
+        json.return_value = {"result": {"next": [{"id": 1}]}}
+
+        g = self.photo.stream()
+        p = g.next()
+        self.assertEqual(p.id, 1)
+
+        json.return_value = {"result": {"next": [{"id": 2}]}}
+        p = g.next()
+        self.assertEqual(p.id, 2)
+
+        json.return_value = {"result": {}}
+        with self.assertRaises(StopIteration):
+            p = g.next()
