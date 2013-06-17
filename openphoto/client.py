@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import httplib
 import functools
 import requests
 import requests_oauthlib
@@ -7,7 +8,8 @@ import requests_oauthlib
 class Client(object):
 
     def __init__(self, host, consumer_key, consumer_secret,
-                       oauth_token, oauth_secret, scheme="https"):
+                 oauth_token, oauth_secret, scheme="https",
+                 http_debug_level=None):
         self.auth = requests_oauthlib.OAuth1(
                             consumer_key,
                             consumer_secret,
@@ -16,6 +18,17 @@ class Client(object):
         self.session = requests.Session()
         self.host = host
         self.scheme = scheme
+        self.http_debug_level = http_debug_level
+
+    @property
+    def http_debug_level(self):
+        return httplib.HTTPConnection.debuglevel
+
+    @http_debug_level.setter
+    def http_debug_level(self, value):
+        if not value:
+            value = 0
+        httplib.HTTPConnection.debuglevel = int(value)
 
     def url(self, endpoint):
         if not endpoint.startswith("/"):
