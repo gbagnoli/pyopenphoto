@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os
+from time import mktime
 from .base import Base
 from .action import (Comment,
                      Favorite)
@@ -73,7 +74,7 @@ class PhotoSize(object):
 class Photo(Base):
     collection_path = "/photos"
     object_path = "/photo"
-    create_path = "/photos/upload.json"
+    create_path = "/photo/upload.json"
 
     def __init__(self, client, data):
         super(Photo, self).__init__(client, data)
@@ -128,9 +129,48 @@ class Photo(Base):
         return self._tags
 
     @classmethod
-    def create(cls, client, **kwargs):
-        # TODO
-        raise NotImplementedError
+    def create(cls, client, photo, private=False, title=None,
+               description=None, tags=None, date_uploaded=None,
+               date_taken=None, license=None, latitude=None,
+               longitude=None, return_sizes=None):
+
+        photo_f = None
+        close_f = False
+        try:
+            if isinstance(photo, stringcls):
+                close_f = True
+                photo_f = open(photo)
+            else:
+                photo_f = photo
+
+            permission = 0 if private else 1
+            params = dict(permission=permission)
+            if title:
+                params["title"] = title
+            if description:
+                params["description"] = description
+            if tags:
+                params["tags"] = ",".join(tags)
+            if date_uploaded:
+                params["dateUploaded"] = mktime(date_uploaded.timetuple())
+            if date_taken:
+                params["dateTaken"] = mktime(date_taken.timetuple())
+            if license:
+                params["license"] = license
+            if latitude:
+                params["latitude"] = latitude
+                if longitude:
+                        params["longitude"] = longitude
+                if return_sizes:
+                    params["returnSizes"] = ",".join(return_sizes)
+
+            response = client.post(cls.create_path,
+                                    files={"photo": photo_f}, params=params)
+            return cls(client, response.json()["result"])
+
+        finally:
+            if photo_f and close_f:
+                photo_f.close()
 
     def add_comment(self, user_email, message, name=None, website=None,
                     target_url=None, permalink=None):
