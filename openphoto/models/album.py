@@ -11,7 +11,11 @@ class Album(Base):
 
     def __init__(self, client, data):
         super(Album, self).__init__(client, data)
-        object.__setattr__(self, "cover", Photo(self.client, data['cover']))
+        if "cover" in data:
+            cover = Photo(self.client, data['cover'])
+        else:
+            cover = None
+        object.__setattr__(self, "cover", cover)
         object.__setattr__(self, "_photos", None)
 
     def _set_photos(self):
