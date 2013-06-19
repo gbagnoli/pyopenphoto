@@ -1,11 +1,17 @@
 #!/usr/bin/env python
-import httplib
 import functools
+import logging
+import traceback
 import requests
 import requests_oauthlib
+try:
+    import httplib
+except ImportError:  # pragma: nocover
+    import http.client as httplib
 
 
 class Client(object):
+    log = logging.getLogger(__name__)
 
     def __init__(self, host, consumer_key, consumer_secret,
                  oauth_token, oauth_secret, scheme="https",
@@ -50,5 +56,22 @@ class Client(object):
     def request_full_url(self, method, url, **kwargs):
         response = self.session.request(method, url, **kwargs)
         response.raise_for_status()
+        try:
+            jres = response.json()
+            code = jres["code"]
+            message = jres["message"]
+
+        except:
+            self.log.debug(traceback.format_exc())
+
+        else:
+            if 400 <= code < 500:
+                message = '%s Client Error: %s' % (code, message)
+            if 500 <= code < 600:
+                message = '%s Server Error: %s' % (code, message)
+            if 400 <= code < 600:
+                raise requests.exceptions.HTTPError(message,
+                                                    response=response)
+
         return response
 
