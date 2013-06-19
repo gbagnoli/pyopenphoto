@@ -80,7 +80,7 @@ class Photo(Base):
         super(Photo, self).__init__(client, data)
         size_mgr = PhotoSizeManager(self)
         object.__setattr__(self, "sizes", size_mgr)
-        self._update_data(data)
+        self._update_data(self.data)
         if not self._tags:
             object.__setattr__(self, "_tags", None)
 

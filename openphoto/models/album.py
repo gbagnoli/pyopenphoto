@@ -11,7 +11,7 @@ class Album(Base):
 
     def __init__(self, client, data):
         super(Album, self).__init__(client, data)
-        if "cover" in data:
+        if "cover" in data and data["cover"]:
             cover = Photo(self.client, data['cover'])
         else:
             cover = None
