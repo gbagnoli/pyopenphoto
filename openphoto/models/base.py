@@ -55,12 +55,15 @@ class Base(object):
         self.data[attr] = value
 
     @classmethod
-    def create(cls, client, path=None, requests_args=None, **kwargs):
+    def create(cls, client, path=None, requests_args=None,
+               **kwargs):
         requests_args = requests_args or {}
         data = requests_args.pop("data", {})
+        params = kwargs.pop("params", {})
         kwargs.update(data)
         path = path or cls.create_path
-        response = client.post(path, data=kwargs, **requests_args)
+        response = client.post(path, data=kwargs, params=params,
+                               **requests_args)
         return cls(client, response.json()['result'])
 
     @classmethod

@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import requests
 from .base import Base
 from .photo import Photo
 from ..utils import is_iterable_container
@@ -8,6 +9,7 @@ from ..utils import is_iterable_container
 class Album(Base):
     collection_path = "/albums"
     object_path = "/album"
+    create_path = "/album/create.json"
 
     def __init__(self, client, data):
         super(Album, self).__init__(client, data)
@@ -17,12 +19,36 @@ class Album(Base):
             cover = None
         object.__setattr__(self, "cover", cover)
         object.__setattr__(self, "_photos", None)
+        try:
+            # fixes updates
+            del self.data["count"]
+        except KeyError:
+            pass
 
     def _set_photos(self):
         object.__setattr__(
             self, "_photos",
             [Photo(self.client, d) for d in self.data["photos"]]
         )
+
+    @classmethod
+    def get(cls, client, id=None, name=None, **kwargs):
+        if id:
+            return super(Album, cls).get(client, id, **kwargs)
+
+        if name:
+            url = "{0}/list.json".format(cls.collection_path)
+            params = kwargs
+            response = client.get(url, params=params)
+            albums = response.json()["result"]
+            for album in albums:
+                if album["name"] == name:
+                    return cls(client, album)
+
+            raise requests.exceptions.HTTPError("404 Client Error: Not Found",
+                                                response=response)
+
+        raise TypeError("Missing one of id or name")
 
     def photos(self):
         if self._photos is None:
@@ -36,9 +62,9 @@ class Album(Base):
         self._set_photos()
 
     @classmethod
-    def create(self, **kwargs):
-        # TODO
-        raise NotImplementedError
+    def create(cls, client, name):
+        return super(Album, cls).create(client,
+                                        name=name)
 
     def _add_remove(self, action, photo):
         if is_iterable_container(photo):
@@ -48,6 +74,7 @@ class Album(Base):
 
         url = self.url("photo", action)
         self.client.post(url, data=dict(ids=ids))
+        object.__setattr__(self, "_photos", None)
 
     def add(self, photo):
         self._add_remove("add", photo)
