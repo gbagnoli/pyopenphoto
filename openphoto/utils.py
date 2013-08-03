@@ -4,6 +4,17 @@ import hashlib
 from collections import Iterable
 from .compat import stringcls
 
+
+class classproperty(property):
+    """ a property decorator for classmethods """
+    def __get__(self, obj, type_):
+        return self.fget.__get__(None, type_)()
+
+    def __set__(self, obj, value):
+        cls = type(obj)
+        return self.fset.__get__(None, cls)(value)
+
+
 def is_iterable(obj):
     """ Return True if object is an iterable (strings are iterables) """
     return isinstance(obj, Iterable)
