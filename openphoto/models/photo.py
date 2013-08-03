@@ -34,7 +34,6 @@ class PhotoSizeManager(object):
 
 
 class PhotoSize(object):
-
     def __init__(self, url, client, photo):
         self.client = client
         self.photo = photo
@@ -128,6 +127,62 @@ class Photo(Base):
 
         return self._tags
 
+    @staticmethod
+    def _create_params_dict(private, title, description, tags,
+                            date_uploaded, date_taken, license,
+                            latitude, longitude):
+        from .tag import Tag
+
+        permission = 0 if private else 1
+        params = dict(permission=permission)
+        if title:
+            params["title"] = title
+        if description:
+            params["description"] = description
+        if tags:
+            tags = [t.id if isinstance(t, Tag) else t for t in tags]
+            params["tags"] = ",".join(tags)
+        if date_uploaded:
+            params["dateUploaded"] = mktime(date_uploaded.timetuple())
+        if date_taken:
+            params["dateTaken"] = mktime(date_taken.timetuple())
+        if license:
+            params["license"] = license
+        if latitude:
+            params["latitude"] = latitude
+        if longitude:
+                params["longitude"] = longitude
+        return params
+
+    def update(self, private=False, title=None,
+               description=None, tags=None, tags_action="replace",
+               date_uploaded=None, date_taken=None, license=None,
+               latitude=None, longitude=None, albums=None):
+
+        params = self._create_params_dict(private, title, description,
+                                         tags, date_uploaded, date_taken,
+                                         license, latitude, longitude)
+
+        acts = ("replace", "add", "remove")
+        if tags_action not in acts:
+            raise ValueError("Invalid action '%s' for tags: valid: %s" % (tags_action,
+                                                                          acts))
+
+        if tags and tags_action == "add":
+            params["tagsAdd"] = params["tags"]
+            del params["tags"]
+
+        elif tags and tags_action == "remove":
+            params["tagsRemove"] = params["tags"]
+            del params["tags"]
+
+        res = self.client.post(self.url("update"), data=params).json()
+
+        if albums:
+            self.add_to(albums)
+
+        self._update_data(res["result"])
+
     @classmethod
     def create(cls, client, photo, private=False, title=None,
                description=None, tags=None, date_uploaded=None,
@@ -142,27 +197,11 @@ class Photo(Base):
                 photo_f = open(photo)
             else:
                 photo_f = photo
-
-            permission = 0 if private else 1
-            params = dict(permission=permission)
-            if title:
-                params["title"] = title
-            if description:
-                params["description"] = description
-            if tags:
-                params["tags"] = ",".join(tags)
-            if date_uploaded:
-                params["dateUploaded"] = mktime(date_uploaded.timetuple())
-            if date_taken:
-                params["dateTaken"] = mktime(date_taken.timetuple())
-            if license:
-                params["license"] = license
-            if latitude:
-                params["latitude"] = latitude
-                if longitude:
-                        params["longitude"] = longitude
-                if return_sizes:
-                    params["returnSizes"] = ",".join(return_sizes)
+            params = cls._create_params_dict(private, title, description,
+                                             tags, date_uploaded, date_taken,
+                                             license, latitude, longitude)
+            if return_sizes:
+                params["returnSizes"] = ",".join(return_sizes)
             if allow_duplicate:
                 params["allowDuplicate"] = 1
 
