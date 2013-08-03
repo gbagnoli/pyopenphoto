@@ -1,6 +1,8 @@
 #!/usr/bin/env python
+import logging
 import functools
-from ..utils import assert_kwargs_empty
+from ..utils import (assert_kwargs_empty,
+                     classproperty)
 
 
 class Base(object):
@@ -8,6 +10,13 @@ class Base(object):
     collection_path = None
     object_path = None
     create_path = None
+
+    @classproperty
+    @classmethod
+    def log(cls):
+        if not hasattr(cls, "__log"):
+            cls._logger = logging.getLogger("%s.%s" % (__name__, cls.__name__))
+        return cls._logger
 
     @classmethod
     def iterate(cls, client, partial, klass=None, paginate=True):
