@@ -62,7 +62,18 @@ class Album(Base):
         self._set_photos()
 
     @classmethod
-    def create(cls, client, name):
+    def create(cls, client, name, return_existing=False):
+        if return_existing:
+            try:
+                return cls.get(client, name=name)
+
+            except requests.exceptions.HTTPError as e:
+                cls.log.critical(e.response.status_code)
+                if e.response.status_code == 404:
+                    pass
+                else:
+                    raise e
+
         return super(Album, cls).create(client,
                                         name=name)
 
@@ -81,4 +92,7 @@ class Album(Base):
 
     def remove(self, photo):
         self._add_remove("remove", photo)
+
+    def __repr__(self):
+        return "<Album id={self.id} name={self.name}>".format(self=self)
 
