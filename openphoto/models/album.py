@@ -45,6 +45,7 @@ class Album(Base):
                 if album["name"] == name:
                     return cls(client, album)
 
+            response.status_code = 404
             raise requests.exceptions.HTTPError("404 Client Error: Not Found",
                                                 response=response)
 
