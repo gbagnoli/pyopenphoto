@@ -132,8 +132,8 @@ class Photo(Base):
     def create(cls, client, photo, private=False, title=None,
                description=None, tags=None, date_uploaded=None,
                date_taken=None, license=None, latitude=None,
-               longitude=None, return_sizes=None):
-
+               longitude=None, return_sizes=None, albums=None,
+               allow_duplicate=False):
         photo_f = None
         close_f = False
         try:
@@ -163,14 +163,29 @@ class Photo(Base):
                         params["longitude"] = longitude
                 if return_sizes:
                     params["returnSizes"] = ",".join(return_sizes)
+            if allow_duplicate:
+                params["allowDuplicate"] = 1
 
+            cls.log.info("Uploading from %s", photo_f)
             response = client.post(cls.create_path,
                                     files={"photo": photo_f}, params=params)
-            return cls(client, response.json()["result"])
+
+            obj = cls(client, response.json()["result"])
+            if albums:
+                obj.add_to(albums)
+            return obj
 
         finally:
             if photo_f and close_f:
                 photo_f.close()
+
+    def add_to(self, albums):
+        from .album import Album  # avoid circular imports
+        if isinstance(albums, Album):
+            albums = [albums]
+
+        for album in albums:
+            album.add(self)
 
     def add_comment(self, user_email, message, name=None, website=None,
                     target_url=None, permalink=None):
