@@ -68,10 +68,7 @@ class Album(Base):
                 return cls.get(client, name=name)
 
             except requests.exceptions.HTTPError as e:
-                cls.log.critical(e.response.status_code)
-                if e.response.status_code == 404:
-                    pass
-                else:
+                if e.response.status_code != 404:
                     raise e
 
         return super(Album, cls).create(client,
