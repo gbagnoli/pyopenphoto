@@ -37,14 +37,9 @@ class Album(Base):
             return super(Album, cls).get(client, id, **kwargs)
 
         if name:
-            url = "{0}/list.json".format(cls.collection_path)
-            params = kwargs
-            response = client.get(url, params=params)
-            albums = response.json()["result"]
-            for album in albums:
-                if album["name"] == name:
-                    return cls(client, album)
-
+            for album in cls.all(client):
+                if album.name == name:
+                    return album
             response.status_code = 404
             raise requests.exceptions.HTTPError("404 Client Error: Not Found",
                                                 response=response)
