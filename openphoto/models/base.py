@@ -42,6 +42,10 @@ class Base(object):
         object.__setattr__(self, "client", client)
         object.__setattr__(self, "data", data)
 
+    def __setstate__(self, state):
+        object.__setattr__(self, "client", state['client'])
+        object.__setattr__(self, "data", state['data'])
+
     def _convert_attr(self, attr):
         if "_" in attr:
             attrname = attr.replace("_", " ").title().replace(" ", "")
@@ -77,7 +81,7 @@ class Base(object):
 
     @classmethod
     def get(cls, client, id, **kwargs):
-        obj = cls(client, {"id":id})
+        obj = cls(client, {"id": id})
         obj.view(**kwargs)
         return obj
 
