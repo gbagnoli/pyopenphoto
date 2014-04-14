@@ -205,7 +205,7 @@ class Photo(Base):
             if allow_duplicate:
                 params["allowDuplicate"] = 1
 
-            cls.log.info("Uploading from %s", photo_f)
+            cls.log.info("Uploading from %s", photo)
             response = client.post(cls.create_path,
                                     files={"photo": photo_f}, params=params)
 
